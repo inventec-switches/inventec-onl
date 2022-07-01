@@ -66,7 +66,7 @@ DEFINE_MUTEX(ipmi2_mutex);
 static struct ipmi_result ipmiresult;
 static struct device *hwmon_dev;
 static struct kobject *device_kobj;
-static ipmi_user_t ipmi_mh_user = NULL;
+static struct ipmi_user *ipmi_mh_user = NULL;
 static void msg_handler(struct ipmi_recv_msg *msg,void* handler_data);
 static struct ipmi_user_hndl ipmi_hndlrs = {   .ipmi_recv_hndl = msg_handler,};
 
@@ -918,9 +918,11 @@ static const struct attribute_group psoc_group = {
 static void check_switch_temp(void)
 {
         static struct file *f;
+        #ifdef set_fs
         mm_segment_t old_fs;
 
         set_fs(get_ds());
+        #endif
         f = filp_open(SWITCH_TEMPERATURE_SOCK,O_RDONLY,0644);
         if(IS_ERR(f)) {
                 return;
@@ -929,14 +931,18 @@ static void check_switch_temp(void)
                 char temp_str[]={0,0,0,0,0,0,0};
                 loff_t pos = 0;
                 u16 temp2 = 0;
+                #ifdef set_fs
                 old_fs = get_fs();
                 set_fs(KERNEL_DS);
+                #endif
                 kernel_read(f, temp_str,6,&pos);
                 temp2 = ((simple_strtoul(temp_str,NULL,10)/1000) <<8 ) & 0xFF00 ;
                 psoc_ipmi_write((u8*)&temp2, SWITCH_TMP_OFFSET, 2);
         }
         filp_close(f,NULL);
+        #ifdef set_fs
         set_fs(old_fs);
+        #endif
 }
 
 static int psoc_polling_thread(void *p)

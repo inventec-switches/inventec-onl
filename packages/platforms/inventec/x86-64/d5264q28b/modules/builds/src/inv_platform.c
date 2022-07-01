@@ -1,19 +1,29 @@
 #include <linux/version.h>
 #include <linux/i2c.h>
 //#include <linux/i2c-algo-bit.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,18,0)
+#include <linux/platform_data/i2c-gpio.h>
+#else
 #include <linux/i2c-gpio.h>
+#endif
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,1,0)
+#include "pca954x.h"
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
 #include <linux/platform_data/pca954x.h>
 #else
 #include <linux/i2c/pca954x.h>
 #endif
 #include <linux/platform_data/pca953x.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+#include <config/eeprom/at24.h>
+#else
 #include <linux/platform_data/at24.h>
+#endif
 
 //#include <asm/gpio.h>
 #define IO_EXPAND_BASE    64
@@ -272,7 +282,11 @@ static int __init plat_lavender_x86_init(void)
     
         i2c_put_adapter(adap);
         for(j=0; j<i2cdev_list[i].size; j++) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,3,0)
+            e = i2c_new_client_device(adap, &i2cdev_list[i].board_info[j] );
+#else
             e = i2c_new_device(adap, &i2cdev_list[i].board_info[j] );
+#endif
         }
     }
 

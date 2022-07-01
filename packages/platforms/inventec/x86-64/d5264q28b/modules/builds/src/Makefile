@@ -1,4 +1,4 @@
-ccflags-y += -Werror
+ccflags-y += -Wno-incompatible-pointer-types -Wno-vla
 
 obj-m += inv_cpld.o
 obj-m += inv_platform.o
